@@ -7,24 +7,62 @@
 
 // Constants - User-servicable parts
 // In a longer project I like to put these in a separate file
-const VALUE1 = 1;
-const VALUE2 = 2;
-
-// Globals
-let myInstance;
-let canvasContainer;
-var centerHorz, centerVert;
-
-class MyClass {
-    constructor(param1, param2) {
-        this.property1 = param1;
-        this.property2 = param2;
-    }
-
-    myMethod() {
-        // code to run when method is called
-    }
+//Square used for tiles selections and more
+class Quad{
+  constructor(tile_x, tile_y, tile_width, tile_height){
+    this.x = tile_x;
+    this.y = tile_y;
+    this.w = tile_width;
+    this.h = tile_height;
+  }
 }
+
+//-------------------------------------------------------------------------------
+
+let pic;
+
+function preload() {
+  video = createCapture(VIDEO);
+}
+
+//Diffract part of image and place somewhere
+function diffract(Tile, Src, Dest){
+  /*
+  -----------
+  | Q1 | Q2 |
+  |----+----|  
+  | Q3 | Q4 |
+  -----------
+  */
+  let origin_x = Tile.x, origin_y = Tile.y;
+  //Q1
+  push()
+    translate(origin_x, origin_y);
+    image(video, Dest.x, Dest.y, Dest.w, Dest.h, Src.x, Src.y, Src.w, Src.h, COVER);
+  pop()
+  
+  //Q2
+  push();
+    translate(origin_x + Tile.w, origin_y);
+    scale(-1, 1);
+    image(video, Dest.x, Dest.y, Dest.w, Dest.h, Src.x, Src.y, Src.w, Src.h, COVER);
+  pop();
+  
+  //Q3
+  push();
+    translate(origin_x, origin_y + Tile.h);
+    scale(1, -1);
+    image(video, Dest.x, Dest.y, Dest.w, Dest.h, Src.x, Src.y, Src.w, Src.h, COVER);
+  pop();
+  
+  //Q4
+  push();
+    translate(origin_x + Tile.w, origin_y + Tile.h);
+    scale(-1, -1);
+    image(video, Dest.x, Dest.y, Dest.w, Dest.h, Src.x, Src.y, Src.w, Src.h, COVER);
+  pop();
+}
+
 
 function resizeScreen() {
   centerHorz = canvasContainer.width() / 2; // Adjusted for drawing logic
@@ -38,42 +76,35 @@ function resizeScreen() {
 function setup() {
   // place our canvas, making it fit our container
   canvasContainer = $("#canvas-container");
-  let canvas = createCanvas(canvasContainer.width(), canvasContainer.height());
+  let canvas = createCanvas(800, 600);
   canvas.parent("canvas-container");
-  // resize canvas is the page is resized
+  // // resize canvas if the page is resized
+  // $(window).resize(function() {
+  //   resizeScreen();
+  // });
+  // resizeScreen();
 
-  // create an instance of the class
-  myInstance = new MyClass("VALUE1", "VALUE2");
-
-  $(window).resize(function() {
-    resizeScreen();
-  });
-  resizeScreen();
+  background(0);
+  //Tile is bounds, tile is culminaton of everything
+  Tile = new Quad(0,0, 20, 20)
+  // Organizing p5js image parameters -- slices should be half of tile with
+  Source = new Quad(0,0, 10, 10)
+  //Maybe dont need destination parameters since its given they are half of tile
+  Destination = new Quad(0, 0, 10, 10)
+  video.size(800, 600);
+  video.hide();
 }
 
 // draw() function is called repeatedly, it's the main animation loop
 function draw() {
-  background(220);    
-  // call a method on the instance
-  myInstance.myMethod();
-
-  // Set up rotation for the rectangle
-  push(); // Save the current drawing context
-  translate(centerHorz, centerVert); // Move the origin to the rectangle's center
-  rotate(frameCount / 100.0); // Rotate by frameCount to animate the rotation
-  fill(234, 31, 81);
-  noStroke();
-  rect(-125, -125, 250, 250); // Draw the rectangle centered on the new origin
-  pop(); // Restore the original drawing context
-
-  // The text is not affected by the translate and rotate
-  fill(255);
-  textStyle(BOLD);
-  textSize(140);
-  text("p5*", centerHorz - 105, centerVert + 40);
+  for(let i=0; i < 800; i += Tile.w){
+    for(let j=0; j < 600; j += Tile.h){
+        diffract(Tile, Source, Destination);
+        Tile.y = j;
+        Source.y = j;
+    }
+    Tile.x = i;
+    Source.x = i;
+  }
 }
 
-// mousePressed() function is called once after every time a mouse button is pressed
-function mousePressed() {
-    // code to run when mouse is pressed
-}
